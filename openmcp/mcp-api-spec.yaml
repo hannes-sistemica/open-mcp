@@ -1,0 +1,927 @@
+openapi: 3.0.3
+info:
+  title: Model Context Protocol API
+  description: RESTful API implementation of the Model Context Protocol for connecting AI applications with data sources
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: api@example.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.example.com/mcp/v1
+    description: Production server
+  - url: http://localhost:8080/mcp/v1
+    description: Development server
+
+security:
+  - {}
+  - apiKey: []
+  - bearerAuth: []
+  - oauth2: []
+
+paths:
+  /initialize:
+    post:
+      summary: Initialize MCP connection
+      description: Establishes a new MCP session with the server
+      operationId: initialize
+      tags:
+        - Connection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InitializeRequest'
+      responses:
+        '200':
+          description: Session initialized successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InitializeResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /discover:
+    get:
+      summary: Discover available capabilities
+      description: Returns the server's available resources, tools, and prompts
+      operationId: discover
+      tags:
+        - Discovery
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+      responses:
+        '200':
+          description: Discovery information retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoveryResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /resources:
+    get:
+      summary: List available resources
+      description: Returns a list of all resources exposed by the server
+      operationId: listResources
+      tags:
+        - Resources
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+        - $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/PageToken'
+      responses:
+        '200':
+          description: Resources listed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /resources/{resourceId}:
+    get:
+      summary: Get resource content
+      description: Retrieves the content of a specific resource
+      operationId: getResource
+      tags:
+        - Resources
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: Resource content retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceContentResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /tools:
+    get:
+      summary: List available tools
+      description: Returns a list of all tools exposed by the server
+      operationId: listTools
+      tags:
+        - Tools
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+      responses:
+        '200':
+          description: Tools listed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToolListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /tools/{toolName}/execute:
+    post:
+      summary: Execute a tool
+      description: Executes a specific tool with provided arguments
+      operationId: executeTool
+      tags:
+        - Tools
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+        - $ref: '#/components/parameters/ToolName'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ToolExecuteRequest'
+      responses:
+        '200':
+          description: Tool executed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToolExecuteResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /prompts:
+    get:
+      summary: List available prompts
+      description: Returns a list of all prompt templates exposed by the server
+      operationId: listPrompts
+      tags:
+        - Prompts
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+      responses:
+        '200':
+          description: Prompts listed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PromptListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /prompts/{promptName}:
+    get:
+      summary: Get prompt details
+      description: Retrieves details of a specific prompt template
+      operationId: getPrompt
+      tags:
+        - Prompts
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+        - $ref: '#/components/parameters/PromptName'
+      responses:
+        '200':
+          description: Prompt details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PromptDetailsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /sampling/complete:
+    post:
+      summary: Request completion
+      description: Request an LLM completion with provided context
+      operationId: requestCompletion
+      tags:
+        - Sampling
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompletionRequest'
+      responses:
+        '200':
+          description: Completion generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompletionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /sampling/stream:
+    post:
+      summary: Stream completion
+      description: Request a streaming LLM completion with Server-Sent Events
+      operationId: streamCompletion
+      tags:
+        - Sampling
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompletionRequest'
+      responses:
+        '200':
+          description: Streaming completion initiated
+          content:
+            text/event-stream:
+              schema:
+                $ref: '#/components/schemas/StreamEvent'
+          headers:
+            X-Stream-ID:
+              description: Unique identifier for this stream
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /roots:
+    get:
+      summary: List root directories
+      description: Returns available root directories for navigation
+      operationId: listRoots
+      tags:
+        - Navigation
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+      responses:
+        '200':
+          description: Roots listed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RootListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /notifications/subscribe:
+    get:
+      summary: Subscribe to notifications
+      description: Establishes a WebSocket connection for real-time notifications
+      operationId: subscribeNotifications
+      tags:
+        - Notifications
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+        - name: Upgrade
+          in: header
+          required: true
+          schema:
+            type: string
+            enum: [websocket]
+        - name: Connection
+          in: header
+          required: true
+          schema:
+            type: string
+            enum: [Upgrade]
+        - name: Sec-WebSocket-Key
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: Sec-WebSocket-Version
+          in: header
+          required: true
+          schema:
+            type: string
+            enum: ['13']
+      responses:
+        '101':
+          description: Switching to WebSocket protocol
+          headers:
+            Upgrade:
+              schema:
+                type: string
+                enum: [websocket]
+            Connection:
+              schema:
+                type: string
+                enum: [Upgrade]
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /session/{sessionId}:
+    delete:
+      summary: Close session
+      description: Terminates an active MCP session
+      operationId: closeSession
+      tags:
+        - Connection
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: Session identifier to close
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Session closed successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  schemas:
+    InitializeRequest:
+      type: object
+      required:
+        - protocolVersion
+        - clientInfo
+      properties:
+        protocolVersion:
+          type: string
+          description: MCP protocol version
+          example: "1.0"
+        clientInfo:
+          $ref: '#/components/schemas/ClientInfo'
+        capabilities:
+          $ref: '#/components/schemas/ClientCapabilities'
+
+    InitializeResponse:
+      type: object
+      required:
+        - protocolVersion
+        - serverInfo
+        - sessionId
+      properties:
+        protocolVersion:
+          type: string
+          description: Negotiated protocol version
+        serverInfo:
+          $ref: '#/components/schemas/ServerInfo'
+        capabilities:
+          $ref: '#/components/schemas/ServerCapabilities'
+        sessionId:
+          type: string
+          description: Unique session identifier
+
+    ClientInfo:
+      type: object
+      required:
+        - name
+        - version
+      properties:
+        name:
+          type: string
+          description: Client application name
+        version:
+          type: string
+          description: Client version
+
+    ServerInfo:
+      type: object
+      required:
+        - name
+        - version
+      properties:
+        name:
+          type: string
+          description: Server implementation name
+        version:
+          type: string
+          description: Server version
+
+    ClientCapabilities:
+      type: object
+      properties:
+        sampling:
+          type: boolean
+          default: false
+        roots:
+          type: boolean
+          default: false
+
+    ServerCapabilities:
+      type: object
+      properties:
+        resources:
+          type: boolean
+          default: false
+        tools:
+          type: boolean
+          default: false
+        prompts:
+          type: boolean
+          default: false
+
+    DiscoveryResponse:
+      type: object
+      required:
+        - capabilities
+      properties:
+        capabilities:
+          $ref: '#/components/schemas/ServerCapabilities'
+        resources:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResourceMetadata'
+        tools:
+          type: array
+          items:
+            $ref: '#/components/schemas/ToolMetadata'
+        prompts:
+          type: array
+          items:
+            $ref: '#/components/schemas/PromptMetadata'
+
+    ResourceMetadata:
+      type: object
+      required:
+        - uri
+        - name
+      properties:
+        uri:
+          type: string
+          description: Resource URI
+        name:
+          type: string
+          description: Human-readable name
+        description:
+          type: string
+          description: Resource description
+        mimeType:
+          type: string
+          description: Content MIME type
+
+    ResourceListResponse:
+      type: object
+      required:
+        - resources
+      properties:
+        resources:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResourceMetadata'
+        nextPageToken:
+          type: string
+          description: Token for pagination
+
+    ResourceContentResponse:
+      type: object
+      required:
+        - uri
+        - content
+      properties:
+        uri:
+          type: string
+        content:
+          oneOf:
+            - $ref: '#/components/schemas/TextContent'
+            - $ref: '#/components/schemas/BlobContent'
+
+    TextContent:
+      type: object
+      required:
+        - type
+        - text
+      properties:
+        type:
+          type: string
+          enum: [text]
+        text:
+          type: string
+        mimeType:
+          type: string
+
+    BlobContent:
+      type: object
+      required:
+        - type
+        - blob
+      properties:
+        type:
+          type: string
+          enum: [blob]
+        blob:
+          type: string
+          format: byte
+          description: Base64 encoded content
+        mimeType:
+          type: string
+
+    ToolMetadata:
+      type: object
+      required:
+        - name
+        - description
+      properties:
+        name:
+          type: string
+          description: Tool identifier
+        description:
+          type: string
+          description: Tool description
+        inputSchema:
+          type: object
+          description: JSON Schema for tool parameters
+
+    ToolListResponse:
+      type: object
+      required:
+        - tools
+      properties:
+        tools:
+          type: array
+          items:
+            $ref: '#/components/schemas/ToolMetadata'
+
+    ToolExecuteRequest:
+      type: object
+      required:
+        - arguments
+      properties:
+        arguments:
+          type: object
+          description: Tool-specific arguments
+
+    ToolExecuteResponse:
+      type: object
+      required:
+        - result
+      properties:
+        result:
+          type: object
+          description: Tool execution result
+        isError:
+          type: boolean
+          default: false
+
+    PromptMetadata:
+      type: object
+      required:
+        - name
+        - description
+      properties:
+        name:
+          type: string
+          description: Prompt identifier
+        description:
+          type: string
+          description: Prompt description
+        arguments:
+          type: array
+          items:
+            $ref: '#/components/schemas/PromptArgument'
+
+    PromptArgument:
+      type: object
+      required:
+        - name
+        - required
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        required:
+          type: boolean
+
+    PromptListResponse:
+      type: object
+      required:
+        - prompts
+      properties:
+        prompts:
+          type: array
+          items:
+            $ref: '#/components/schemas/PromptMetadata'
+
+    PromptDetailsResponse:
+      type: object
+      required:
+        - name
+        - description
+        - template
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        template:
+          type: string
+          description: Prompt template with placeholders
+        arguments:
+          type: array
+          items:
+            $ref: '#/components/schemas/PromptArgument'
+
+    CompletionRequest:
+      type: object
+      required:
+        - messages
+      properties:
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/Message'
+        modelPreferences:
+          $ref: '#/components/schemas/ModelPreferences'
+        maxTokens:
+          type: integer
+          minimum: 1
+        temperature:
+          type: number
+          minimum: 0
+          maximum: 2
+        stopSequences:
+          type: array
+          items:
+            type: string
+        includeContext:
+          type: array
+          items:
+            type: string
+          description: Resource URIs to include
+
+    Message:
+      type: object
+      required:
+        - role
+        - content
+      properties:
+        role:
+          type: string
+          enum: [user, assistant, system]
+        content:
+          type: string
+
+    ModelPreferences:
+      type: object
+      properties:
+        hints:
+          type: array
+          items:
+            type: string
+          description: Model name hints
+
+    CompletionResponse:
+      type: object
+      required:
+        - completion
+      properties:
+        completion:
+          $ref: '#/components/schemas/CompletionContent'
+        model:
+          type: string
+          description: Model used for completion
+
+    CompletionContent:
+      type: object
+      required:
+        - content
+      properties:
+        content:
+          type: string
+        stopReason:
+          type: string
+          enum: [stop, length, content_filter]
+
+    StreamEvent:
+      type: object
+      required:
+        - event
+        - data
+      properties:
+        event:
+          type: string
+          enum: [chunk, error, done]
+        data:
+          oneOf:
+            - $ref: '#/components/schemas/StreamChunk'
+            - $ref: '#/components/schemas/StreamError'
+            - $ref: '#/components/schemas/StreamDone'
+
+    StreamChunk:
+      type: object
+      required:
+        - content
+      properties:
+        content:
+          type: string
+        index:
+          type: integer
+
+    StreamError:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+        code:
+          type: string
+
+    StreamDone:
+      type: object
+      properties:
+        stopReason:
+          type: string
+        model:
+          type: string
+
+    RootListResponse:
+      type: object
+      required:
+        - roots
+      properties:
+        roots:
+          type: array
+          items:
+            $ref: '#/components/schemas/RootDirectory'
+
+    RootDirectory:
+      type: object
+      required:
+        - uri
+        - name
+      properties:
+        uri:
+          type: string
+          description: Root directory URI
+        name:
+          type: string
+          description: Display name
+
+    WebSocketMessage:
+      type: object
+      required:
+        - type
+        - timestamp
+      properties:
+        type:
+          type: string
+          enum: [resource_updated, tool_executed, prompt_used, log, progress]
+        timestamp:
+          type: string
+          format: date-time
+        data:
+          type: object
+          description: Event-specific data
+
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+
+  parameters:
+    SessionId:
+      name: X-Session-ID
+      in: header
+      required: true
+      description: Session identifier from initialization
+      schema:
+        type: string
+
+    ResourceId:
+      name: resourceId
+      in: path
+      required: true
+      description: Resource identifier
+      schema:
+        type: string
+
+    ToolName:
+      name: toolName
+      in: path
+      required: true
+      description: Tool name
+      schema:
+        type: string
+
+    PromptName:
+      name: promptName
+      in: path
+      required: true
+      description: Prompt name
+      schema:
+        type: string
+
+    PageSize:
+      name: pageSize
+      in: query
+      description: Maximum number of items to return
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 50
+
+    PageToken:
+      name: pageToken
+      in: query
+      description: Token for pagination
+      schema:
+        type: string
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  securitySchemes:
+    apiKey:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key authentication
+
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT bearer token authentication
+
+    oauth2:
+      type: oauth2
+      description: OAuth 2.0 authentication
+      flows:
+        authorizationCode:
+          authorizationUrl: https://auth.example.com/oauth/authorize
+          tokenUrl: https://auth.example.com/oauth/token
+          scopes:
+            read: Read access to MCP resources
+            write: Write access to execute tools
+            admin: Administrative access
